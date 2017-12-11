@@ -1,0 +1,2 @@
+2017-12-11 14:26:48 - Starting C:\Program Files\nodejs\node.exe  --harmony C:\Users\User\AppData\Roaming\npm\node_modules\node-windows\lib\wrapper.js --file C:\PULSE\L19\Indaiatuba-Brazil-Line-19\modbus_restv2.js --log "PULSE line19 checkweigher SERVICE wrapper" --grow 0.25 --wait 1 --maxrestarts 3 --abortonerror n --stopparentfirst undefined
+2017-12-11 14:26:48 - Started 8980
