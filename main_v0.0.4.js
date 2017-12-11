@@ -5,7 +5,7 @@ var authorization = {user:"user",password:"00000000"};
 var modbus = require('jsmodbus');
 var PubNub = require('pubnub');
 var secPubNub=0;
-
+//Que onda prro
 
 try{
 
