@@ -1,7 +1,5 @@
 //cambiar path de pubnub y paths de logs
 var fs = require('fs');
-var Client = require('node-rest-client').Client;
-var authorization = {user:"user",password:"00000000"};
 var modbus = require('jsmodbus');
 var PubNub = require('pubnub');
 var secPubNub=0;
@@ -91,45 +89,23 @@ var Ballerct = null,
             var CntOutEOL=null,
                 secEOL=0;
 
-    var EOLct = null,
-        EOLresults = null,
-        CntInEOL = null,
-        CntOutEOL = null,
-        EOLactual = 0,
-        EOLtime = 0,
-        EOLsec = 0,
-        EOLflagStopped = false,
-        EOLstate = 0,
-        EOLspeed = 0,
-        EOLspeedTemp = 0,
-        EOLflagPrint = 0,
-        EOLsecStop = 0,
-        EOLONS = 0,
-        EOLStartTime = null,
-        EOLtimeStop = 50, //NOTE: Timestop
-        EOLWorktime = 3, // Valor anterior 20 NOTE: 60 si la máquina trabaja continuamente, 3 sí tarda entre 40 y 60 segundos en "operar"
-        EOLflagRunning = false;
-
-
-
-    var Palletizerct = null,
-        Palletizerresults = null,
-        CntInPalletizer = null,
-        CntOutPalletizer = null,
-        Palletizeractual = 0,
-        Palletizertime = 0,
-        Palletizersec = 0,
-        PalletizerflagStopped = false,
-        Palletizerstate = 0,
-        Palletizerspeed = 0,
-        PalletizerspeedTemp = 0,
-        PalletizerflagPrint = 0,
-        PalletizersecStop = 0,
-        PalletizerONS = 0,
-        PalletizerStartTime = null,
-        PalletizertimeStop = 60*4, //NOTE: Timestop
-        PalletizerWorktime = 1, // Valor anterior 20 NOTE: 60 si la máquina trabaja continuamente, 3 sí tarda entre 40 y 60 segundos en "operar"
-        PalletizerflagRunning = false;
+var Palletizerct = null,
+    Palletizerresults = null,
+    CntInPalletizer = null,
+    CntOutPalletizer = null,
+    Palletizeractual = 0,
+    Palletizertime = 0,
+    Palletizersec = 0,
+    PalletizerflagStopped = false,
+    Palletizerstate = 0,
+    Palletizerspeed = 0,
+    PalletizerspeedTemp = 0,
+    PalletizerflagPrint = 0,
+    PalletizersecStop = 0,
+    PalletizerONS = false,
+    PalletizertimeStop = 60 * 8, //NOTE: Timestop en segundos
+    PalletizerWorktime = 6.99, //NOTE: Intervalo de tiempo en minutos para actualizar el log
+    PalletizerflagRunning = false
 
     var files = fs.readdirSync("C:/PULSE/L19/L19_LOGS/"); //Leer documentos
     var actualdate = Date.now(); //Fecha actual
@@ -573,165 +549,91 @@ setInterval(function(){
                       setInterval(function(){
 
 
-                          client3.readHoldingRegisters(0, 16).then(function(resp) {
-                            CntOutEOL = joinWord(resp.register[0], resp.register[1]);
-                            CntOutPalletizer = joinWord(resp.register[2], resp.register[3]);
+      client3.readHoldingRegisters(0, 16).then(function(resp) {
+        CntOutEOL = joinWord(resp.register[0], resp.register[1]);
+        CntOutPalletizer = joinWord(resp.register[2], resp.register[3]);
 
 
 
-                            /*----------------------------------------------------------------------------------EOL----------------------------------------------------------------------------------*/
-                                  if(secEOL>=60 && CntOutEOL){
-                                    fs.appendFileSync("C:/PULSE/L19/L19_LOGS/BRA_IND_EOL_L19.log","tt="+Date.now()+",var=EOL"+",val="+CntOutEOL+"\n");
-                                    secEOL=0;
-                                  }else{
-                                    secEOL++;
-                                  }
-                            /*----------------------------------------------------------------------------------EOL----------------------------------------------------------------------------------*/
+        /*----------------------------------------------------------------------------------EOL----------------------------------------------------------------------------------*/
+              if(secEOL>=60 && CntOutEOL){
+                fs.appendFileSync("C:/PULSE/L19/L19_LOGS/BRA_IND_EOL_L19.log","tt="+Date.now()+",var=EOL"+",val="+CntOutEOL+"\n");
+                secEOL=0;
+              }else{
+                secEOL++;
+              }
+        /*----------------------------------------------------------------------------------EOL----------------------------------------------------------------------------------*/
 
-                            //------------------------------------------EOL----------------------------------------------
-                                  EOLct = CntOutEOL; // NOTE: igualar al contador de salida
-                                  if (EOLONS == 0 && EOLct) {
-                                    EOLspeedTemp = EOLct;
-                                    EOLStartTime = Date.now();
-                                    EOLONS = 1;
-                                  }
-                                  if(EOLct > EOLactual){
-                                    if(EOLflagStopped){
-                                      EOLspeed = EOLct - EOLspeedTemp;
-                                      EOLspeedTemp = EOLct;
-                                      EOLStartTime = Date.now();
-                                      EOLsec = 0;
-                                    }
-                                    EOLsecStop = 0;
-                                    EOLsec++;
-                                    EOLtime = Date.now();
-                                    EOLstate = 1;
-                                    EOLflagStopped = false;
-                                    EOLflagRunning = true;
-                                  } else if( EOLct == EOLactual ){
-                                    if(EOLsecStop == 0){
-                                      EOLtime = Date.now();
-                                    }
-                                    EOLsecStop++;
-                                    if(EOLsecStop >= EOLtimeStop){
-                                      EOLspeed = 0;
-                                      EOLstate = 2;
-                                      EOLspeedTemp = EOLct;
-                                      EOLflagStopped = true;
-                                      EOLflagRunning = false;
-                                    }
-                                    if(EOLsecStop % (EOLtimeStop*2) == 0 || EOLsecStop == EOLtimeStop ){
-                                      EOLflagPrint = 1;
-
-                                      if(EOLsecStop % (EOLtimeStop*2) == 0){
-                                        EOLtime = Date.now();
-                                      }
-                                    }
-                                  }
-                                  EOLactual = EOLct;
-                                  if(EOLsec == EOLWorktime){
-                                    EOLsec = 0;
-                                    if(EOLflagRunning && EOLct){
-                                      EOLflagPrint = 1;
-                                      EOLsecStop = 0;
-                                      EOLspeed = Math.floor( (EOLct - EOLspeedTemp) / (Date.now() - EOLStartTime) * 60000 );
-                                      EOLspeedTemp = EOLct;
-                                      EOLStartTime = Date.now();
-                                    }
-                                  }
-
-                                  EOLresults = {
-                                    ST: EOLstate,
-                                  //  CPQI : CntInEOL,
-                                    CPQO : CntOutEOL,
-                                    SP: EOLspeed
-                                  };
-
-                            //------------------------------------------EOL----------------------------------------------
-
+        //------------------------------------------Palletizer----------------------------------------------
+              Palletizerct = CntOutPalletizer // NOTE: igualar al contador de salida
+              if (!PalletizerONS && Palletizerct) {
+                PalletizerspeedTemp = Palletizerct
+                Palletizersec = Date.now()
+                PalletizerONS = true
+                Palletizertime = Date.now()
+              }
+              if(Palletizerct > Palletizeractual){
+                if(PalletizerflagStopped){
+                  Palletizerspeed = Palletizerct - PalletizerspeedTemp
+                  PalletizerspeedTemp = Palletizerct
+                  Palletizersec = Date.now()
+                  Palletizertime = Date.now()
+                }
+                PalletizersecStop = 0
+                Palletizerstate = 1
+                PalletizerflagStopped = false
+                PalletizerflagRunning = true
+              } else if( Palletizerct == Palletizeractual ){
+                if(PalletizersecStop == 0){
+                  Palletizertime = Date.now()
+                  PalletizersecStop = Date.now()
+                }
+                if( ( Date.now() - ( PalletizertimeStop * 1000 ) ) >= PalletizersecStop ){
+                  Palletizerspeed = 0
+                  Palletizerstate = 2
+                  PalletizerspeedTemp = Palletizerct
+                  PalletizerflagStopped = true
+                  PalletizerflagRunning = false
+                  PalletizerflagPrint = 1
+                }
+              }
+              Palletizeractual = Palletizerct
+              if(Date.now() - 60000 * PalletizerWorktime >= Palletizersec && PalletizersecStop == 0){
+                if(PalletizerflagRunning && Palletizerct){
+                  PalletizerflagPrint = 1
+                  PalletizersecStop = 0
+                  Palletizerspeed = Palletizerct - PalletizerspeedTemp
+                  PalletizerspeedTemp = Palletizerct
+                  Palletizersec = Date.now()
+                }
+              }
+              Palletizerresults = {
+                ST: Palletizerstate,
+                CPQO: CntOutPalletizer,
+                SP: Palletizerspeed
+              }
+              if (PalletizerflagPrint == 1) {
+                for (var key in Palletizerresults) {
+                  if( Palletizerresults[key] != null && ! isNaN(Palletizerresults[key]) )
+                  //NOTE: Cambiar path
+                  fs.appendFileSync('C:/PULSE/L19/L19_LOGS/BRA_IND_Palletizer_L19.log', 'tt=' + Palletizertime + ',var=' + key + ',val=' + Palletizerresults[key] + '\n')
+                }
+                PalletizerflagPrint = 0
+                PalletizersecStop = 0
+                Palletizertime = Date.now()
+              }
+        //------------------------------------------Palletizer----------------------------------------------
 
 
+        });//Cierre de lectura
 
-
-
-                            //------------------------------------------Palletizer----------------------------------------------
-                                  Palletizerct = CntOutPalletizer; // NOTE: igualar al contador de salida
-                                  if (PalletizerONS == 0 && Palletizerct) {
-                                    PalletizerspeedTemp = Palletizerct;
-                                    PalletizerStartTime = Date.now();
-                                    PalletizerONS = 1;
-                                  }
-                                  if(Palletizerct > Palletizeractual){
-                                    if(PalletizerflagStopped){
-                                      Palletizerspeed = Palletizerct - PalletizerspeedTemp;
-                                      PalletizerspeedTemp = Palletizerct;
-                                      PalletizerStartTime = Date.now();
-                                      Palletizersec = 0;
-                                    }
-                                    PalletizersecStop = 0;
-                                    Palletizersec++;
-                                    Palletizertime = Date.now();
-                                    Palletizerstate = 1;
-                                    PalletizerflagStopped = false;
-                                    PalletizerflagRunning = true;
-                                  } else if( Palletizerct == Palletizeractual ){
-                                    if(PalletizersecStop == 0){
-                                      Palletizertime = Date.now();
-                                    }
-                                    PalletizersecStop++;
-                                    if(PalletizersecStop >= PalletizertimeStop){
-                                      Palletizerspeed = 0;
-                                      Palletizerstate = 2;
-                                      PalletizerspeedTemp = Palletizerct;
-                                      PalletizerflagStopped = true;
-                                      PalletizerflagRunning = false;
-                                    }
-                                    if(PalletizersecStop % (PalletizertimeStop*2) == 0 || PalletizersecStop == PalletizertimeStop ){
-                                      PalletizerflagPrint = 1;
-
-                                      if(PalletizersecStop % (PalletizertimeStop*2) == 0){
-                                        Palletizertime = Date.now();
-                                      }
-                                    }
-                                  }
-                                  Palletizeractual = Palletizerct;
-                                  if(Palletizersec == PalletizerWorktime){
-                                    Palletizersec = 0;
-                                    if(PalletizerflagRunning && Palletizerct){
-                                      PalletizerflagPrint = 1;
-                                      PalletizersecStop = 0;
-                                      Palletizerspeed = Math.floor( (Palletizerct - PalletizerspeedTemp) / (Date.now() - PalletizerStartTime) * 300000 );
-                                      PalletizerspeedTemp = Palletizerct;
-                                      PalletizerStartTime = Date.now();
-                                    }
-                                  }
-                                  console.log( Palletizerct + '    ' + PalletizersecStop )
-                                  Palletizerresults = {
-                                    ST: EOLstate,
-                                  //  CPQI : CntInPalletizer,
-                                    CPQO : CntOutPalletizer,
-                                    SP: Palletizerspeed
-                                  };
-                                  if (EOLflagPrint == 1 && Palletizerct) {
-                                    for (var key in Palletizerresults) {
-                                      if(Palletizerresults[key] != null && ! isNaN(Palletizerresults[key]))
-                                      //NOTE: Cambiar path
-                                      fs.appendFileSync('C:/PULSE/L19/L19_LOGS/BRA_IND_Palletizer_L19.log', 'tt=' + Palletizertime + ',var=' + key + ',val=' + Palletizerresults[key] + '\n');
-                                    }
-                                    EOLflagPrint = 0;
-                                  }
-                            //------------------------------------------Palletizer----------------------------------------------
-
-
-                          });//Cierre de lectura
-
-                        },1000);
-                    });//Cierre de cliente
-                        client3.on('error', function(err) {
-                            console.log(err);
-                        });
-                        client3.on('close', function() {
-                        });
+      },1000);
+  });//Cierre de cliente
+      client3.on('error', function(err) {
+          console.log(err);
+      });
+      client3.on('close', function() {
+      });
 
 
 
