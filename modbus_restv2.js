@@ -17,7 +17,15 @@ client.get("http://192.168.10.30:5000/test", function (data, response) {
     let varpe_count1= data.Countvarpe;
     let varpe_weight2= data.Weightvarpe2;
     let varpe_count2= data.Countvarpe2;
+if (varpe_weight1 < 100)
+{
+  varpe_weight1 =0;
+}
 
+if (varpe_weight2 < 100)
+{
+  varpe_weight2 =0;
+}
     Varpe = {
       WEIGHT: varpe_weight1,
       CPQI: varpe_count1
